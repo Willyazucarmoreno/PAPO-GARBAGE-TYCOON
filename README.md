@@ -16,7 +16,7 @@ Ver `PROGRESO.md` (hecho), `PENDIENTES.md` (siguiente), `ERRORES.md` (limitacion
 
 ## Probar
 - **Navegador (tablet):** cada push a `main` publica el juego en GitHub Pages:
-  `https://<usuario>.github.io/PAPO-GARBAGE-TYCOON/`
+  https://willyazucarmoreno.github.io/PAPO-GARBAGE-TYCOON/
 - **APK Android:** pestaña *Actions* → última ejecución → artefacto
   `PAPO-Garbage-Tycoon-APK` (APK de depuración firmado, instalable directamente).
 - **Codespaces:** `.devcontainer/` instala Godot 4.3 y las plantillas.

@@ -1,7 +1,6 @@
 # Pendientes (orden de prioridad)
 
-1. Usuario: activar GitHub Pages (Settings → Pages → Source: GitHub Actions).
-2. Usuario: subir paquetes KayKit a `assets/models/` (nombres en docs/ASSETS.md) o dar enlace.
+1. Usuario: subir paquetes KayKit a `assets/models/` (nombres en docs/ASSETS.md) o dar enlace.
 3. Integrar plugin AdMob Android (Poing Studios) con gradle build + UMP; probar con IDs de prueba.
 4. Sonido y música CC0 (Kenney audio).
 5. Plantas de reciclaje físicas (edificio que procesa materiales → producto con más valor) y clasificación visual.
