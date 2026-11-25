@@ -21,6 +21,7 @@ const SCREEN_UP := Vector3(-0.70710678, 0, -0.70710678)
 
 func _ready() -> void:
 	rebuild_visual()
+	GameState.look_changed.connect(rebuild_visual)
 
 
 func rebuild_visual() -> void:
@@ -31,7 +32,8 @@ func rebuild_visual() -> void:
 	add_child(_visual)
 	_model = AssetLib.instance("player")
 	var rider_h := 0.0
-	_vehicle = _build_vehicle(GameState.tier)
+	var truck := GameState.boosts.active("truck")
+	_vehicle = _build_vehicle(9 if truck else GameState.tier, Color("f1c40f") if truck else GameState.look_color("vehicle"))
 	if _vehicle:
 		_visual.add_child(_vehicle)
 		rider_h = float(_vehicle.get_meta("seat", 0.0))
@@ -39,17 +41,17 @@ func rebuild_visual() -> void:
 		_model.position.y = rider_h
 		_visual.add_child(_model)
 	else:
-		var body := AssetLib.humanoid(_visual, Color("ff8c1a"), Color("2c3e50"), Color("e0ac69"), Color("27ae60"))
+		var body := AssetLib.humanoid(_visual, GameState.look_color("shirt"), Color("2c3e50"), Color("e0ac69"), GameState.look_color("hat"))
 		body.position.y = rider_h
 		_model = body
 	# Bolsa / mochila visibles al inicio
-	if GameState.tier == 0:
+	if GameState.tier == 0 and _vehicle == null:
 		AssetLib.sphere(_model, 0.28, Color("2d3436"), Vector3(0.5, 0.55, 0.1), 6)
 	elif GameState.tier == 1:
 		AssetLib.box(_model, Vector3(0.5, 0.6, 0.3), Color("2980b9"), Vector3(0, 1.0, -0.35))
 
 
-func _build_vehicle(t: int) -> Node3D:
+func _build_vehicle(t: int, paint: Color = Color(0, 0, 0, 0)) -> Node3D:
 	if t < 2:
 		return null
 	var key := ["", "", "cart", "bicycle", "tricycle", "motorcycle", "pickup", "van", "small_truck", "garbage_truck"]
@@ -67,7 +69,7 @@ func _build_vehicle(t: int) -> Node3D:
 			AssetLib.cyl(v, 0.15, 0.15, 0.1, Color("222222"), Vector3(0.4, 0.15, 0.9)).rotation_degrees.z = 90
 			v.set_meta("seat", 0.0)
 		3, 4:  # bicicleta / triciclo
-			var frame := Color("e74c3c") if t == 3 else Color("16a085")
+			var frame := paint if paint.a > 0.0 else (Color("e74c3c") if t == 3 else Color("16a085"))
 			AssetLib.box(v, Vector3(0.1, 0.1, 1.4), frame, Vector3(0, 0.55, 0))
 			AssetLib.cyl(v, 0.35, 0.35, 0.08, Color("222222"), Vector3(0, 0.35, 0.65), 10).rotation_degrees.z = 90
 			if t == 3:
@@ -78,7 +80,7 @@ func _build_vehicle(t: int) -> Node3D:
 				AssetLib.box(v, Vector3(1.0, 0.5, 0.8), Color("7f8c8d"), Vector3(0, 0.7, -0.9))
 			v.set_meta("seat", 0.25)
 		5:  # moto
-			AssetLib.box(v, Vector3(0.35, 0.45, 1.5), Color("c0392b"), Vector3(0, 0.6, 0))
+			AssetLib.box(v, Vector3(0.35, 0.45, 1.5), paint if paint.a > 0.0 else Color("c0392b"), Vector3(0, 0.6, 0))
 			AssetLib.cyl(v, 0.32, 0.32, 0.15, Color("222222"), Vector3(0, 0.32, 0.7), 10).rotation_degrees.z = 90
 			AssetLib.cyl(v, 0.32, 0.32, 0.15, Color("222222"), Vector3(0, 0.32, -0.7), 10).rotation_degrees.z = 90
 			AssetLib.box(v, Vector3(0.7, 0.5, 0.5), Color("34495e"), Vector3(0, 0.9, -0.85))
@@ -88,7 +90,7 @@ func _build_vehicle(t: int) -> Node3D:
 				8: [Vector3(2.2, 2.0, 4.8), Color("f39c12")], 9: [Vector3(2.4, 2.4, 5.6), Color("27ae60")]}
 			var s: Array = specs[mini(t, 9)]
 			var size: Vector3 = s[0]
-			var col: Color = s[1]
+			var col: Color = paint if paint.a > 0.0 else s[1]
 			AssetLib.box(v, Vector3(size.x, 1.1, 1.4), col.darkened(0.1), Vector3(0, 1.0, size.z * 0.5 - 0.7))
 			AssetLib.box(v, Vector3(size.x * 0.9, 0.5, 0.05), Color("bfe6ff"), Vector3(0, 1.3, size.z * 0.5 + 0.01))
 			AssetLib.box(v, Vector3(size.x, size.y, size.z - 1.5), col, Vector3(0, 0.55 + size.y * 0.5, -0.75))
@@ -181,7 +183,7 @@ func _collect() -> void:
 		if d <= r2:
 			picked.append(tn)
 	for tn in picked:
-		if GameState.add_to_bag(int(tn.get_meta("mat"))):
+		if GameState.add_to_bag(int(tn.get_meta("mat")), int(tn.get_meta("zone"))):
 			world.take_trash(tn, self)
 		else:
 			break

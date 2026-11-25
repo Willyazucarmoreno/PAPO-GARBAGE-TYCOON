@@ -65,9 +65,11 @@ func _ready() -> void:
 	player.joystick = ui.joystick
 
 	for i in GameState.zones_unlocked:
-		for _k in TRASH_PER_ZONE:
+		for _k in GameState.zone_trash_cap(i, TRASH_PER_ZONE):
 			_spawn_trash_in(i)
 	_sync_workers()
+	GameState.zone_clean_changed.connect(_update_dirt)
+	GameState.spawn_bonus_materials.connect(_spawn_bonus)
 
 	GameState.zones_changed.connect(_on_zones_changed)
 	GameState.tier_changed.connect(_on_tier_changed)
@@ -157,7 +159,8 @@ func _build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -30, 0)
 	sun.light_energy = 0.75
-	sun.shadow_enabled = true
+	sun.shadow_enabled = bool(GameState.settings.get("shadows", true))
+	sun.name = "Sun"
 	sun.directional_shadow_max_distance = 45.0
 	add_child(sun)
 
@@ -195,6 +198,13 @@ func _build_zone(i: int) -> void:
 			AssetLib.box(root, Vector3(1.2, 0.07, 0.18), Color("f5f5f5"), Vector3(k * 4.0, 0.03, 0))
 	_remove_obstacles_near(c)
 	_decorate(root, i, zd["decor"], unlocked)
+	if unlocked:
+		var dirt := Node3D.new()
+		dirt.name = "Dirt"
+		root.add_child(dirt)
+		_update_dirt(i)
+		if not GameState.event.is_empty():
+			_event_deco(root, i)
 	var lbl := Label3D.new()
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = not unlocked
@@ -500,21 +510,69 @@ func _on_sold(amount: float, at: Vector3) -> void:
 	float_text("+$%s" % GameData.fmt(amount), at + Vector3(0, 2.5, 0), Color("7CFC00"))
 
 
+## Manchas de suciedad que desaparecen al limpiar la zona.
+func _update_dirt(zi: int) -> void:
+	if zone_nodes[zi] == null or zi >= GameState.zones_unlocked:
+		return
+	var dirt: Node3D = (zone_nodes[zi] as Node3D).get_node_or_null("Dirt")
+	if dirt == null:
+		return
+	var want := int(ceil((1.0 - float(GameState.zone_clean[zi])) * 14.0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77 + zi * 131
+	while dirt.get_child_count() > want:
+		var c := dirt.get_child(dirt.get_child_count() - 1)
+		dirt.remove_child(c)
+		c.queue_free()
+	for k in range(dirt.get_child_count(), want):
+		var p := Vector3(rng.randf_range(-17, 17), 0.03, rng.randf_range(-17, 17))
+		for _s in k:
+			p = Vector3(rng.randf_range(-17, 17), 0.03, rng.randf_range(-17, 17))
+		var d := AssetLib.cyl(dirt, rng.randf_range(1.0, 2.2), rng.randf_range(1.2, 2.6), 0.04, Color(0.32, 0.25, 0.15, 0.55), p, 7)
+		d.material_override = AssetLib.mat(Color(0.32, 0.25, 0.15, 0.55))
+
+
+func _event_deco(root: Node3D, zi: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 500 + zi
+	var ec: Color = GameState.event.get("color", Color.WHITE)
+	for k in 6:
+		var p := _lot(rng)
+		match str(GameState.event.get("deco", "")):
+			"pumpkin":
+				AssetLib.sphere(root, 0.6, Color("ff7f11"), p + Vector3(0, 0.5, 0), 8)
+				AssetLib.cyl(root, 0.06, 0.08, 0.3, Color("2d6a4f"), p + Vector3(0, 1.15, 0), 5)
+			"xmas":
+				AssetLib.cyl(root, 0.0, 1.2, 2.6, Color("1b5e20"), p + Vector3(0, 1.5, 0), 7)
+				AssetLib.sphere(root, 0.22, Color("ffd166"), p + Vector3(0, 2.9, 0), 6)
+				AssetLib.sphere(root, 0.15, ec, p + Vector3(0.5, 1.2, 0.4), 6)
+			"fireworks":
+				AssetLib.cyl(root, 0.08, 0.08, 3.0, Color("dddddd"), p + Vector3(0, 1.5, 0), 5)
+				var s := AssetLib.sphere(root, 0.45, Color.from_hsv(rng.randf(), 0.8, 1.0), p + Vector3(0, 3.2, 0), 6)
+				s.material_override = AssetLib.mat(s.material_override.albedo_color, 0.0, true)
+			"earth":
+				AssetLib.sphere(root, 0.7, Color("2a9d8f"), p + Vector3(0, 0.9, 0), 8)
+				AssetLib.box(root, Vector3(0.6, 0.1, 0.5), Color("52b788"), p + Vector3(0.2, 1.5, 0.2))
+
+
+func _spawn_bonus(count: int) -> void:
+	var zi := clampi(world_zone(player.position), 0, GameState.zones_unlocked - 1)
+	var pool: Array = GameData.ZONES[GameState.zones_unlocked - 1]["pool"]
+	for k in count:
+		var mat := int(pool[mini(pool.size() - 1, pool.size() / 2 + _rng.randi() % maxi(1, pool.size() - pool.size() / 2))])
+		var p := player.position + Vector3(_rng.randf_range(-6, 6), 0, _rng.randf_range(-6, 6))
+		if not is_walkable(p):
+			p = player.position
+		_add_trash(mat, zi, resolve_obstacles(p, 0.4))
+
+
+func world_zone(p: Vector3) -> int:
+	return maxi(0, zone_at(p))
+
+
 func float_text(t: String, at: Vector3, col: Color) -> void:
-	var l := Label3D.new()
-	l.text = t
-	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.no_depth_test = true
-	l.font_size = 80
-	l.outline_size = 16
-	l.pixel_size = 0.012
-	l.modulate = col
-	l.position = at
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_property(l, "position", at + Vector3(0, 2.5, 0), 1.1)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 1.1)
-	tw.tween_callback(l.queue_free)
+	PapoUI.float_text_3d(self, t, at, col)
+
 
 
 # ----------------------------------------------------------- basura
@@ -569,7 +627,10 @@ func _spawn_trash_in(zi: int) -> void:
 		p = c + Vector3(_rng.randf_range(-1, 1), 0, _rng.randf_range(-1, 1)) * (ZONE_SIZE * 0.5 - 1.5)
 		if resolve_obstacles(p, 0.4).distance_to(p) < 0.01:
 			break
-	var mat := _pick_material(zi)
+	_add_trash(_pick_material(zi), zi, p)
+
+
+func _add_trash(mat: int, zi: int, p: Vector3) -> void:
 	var t := MeshInstance3D.new()
 	t.mesh = _trash_meshes[mat]
 	t.position = p + Vector3(0, 0.2, 0)
@@ -617,10 +678,11 @@ func _process(delta: float) -> void:
 	if _spawn_timer >= SPAWN_INTERVAL:
 		_spawn_timer = 0.0
 		var lowest := -1
-		var low_count := TRASH_PER_ZONE
+		var low_ratio := 1.0
 		for i in GameState.zones_unlocked:
-			if zone_trash_count[i] < low_count:
-				low_count = zone_trash_count[i]
+			var r := float(zone_trash_count[i]) / float(maxi(1, GameState.zone_trash_cap(i, TRASH_PER_ZONE)))
+			if r < low_ratio:
+				low_ratio = r
 				lowest = i
 		if lowest >= 0:
 			_spawn_trash_in(lowest)
@@ -644,7 +706,7 @@ func _on_zones_changed() -> void:
 		_build_zone(i)
 	_rebuild_sell_points()
 	var zi := GameState.zones_unlocked - 1
-	while zone_trash_count[zi] < TRASH_PER_ZONE:
+	while zone_trash_count[zi] < GameState.zone_trash_cap(zi, TRASH_PER_ZONE):
 		_spawn_trash_in(zi)
 
 
@@ -653,12 +715,19 @@ func _on_tier_changed() -> void:
 	player.rebuild_visual()
 
 
+func set_shadows(on: bool) -> void:
+	($Sun as DirectionalLight3D).shadow_enabled = on
+
+
 func _sync_workers() -> void:
 	var existing := workers_root.get_children()
-	# Reconstruir solo si cambia el número; los niveles se leen en vivo.
+	# Reconstruir si cambia el número; los niveles se leen en vivo.
 	if existing.size() == GameState.workers.size():
 		return
-	for i in range(existing.size(), GameState.workers.size()):
+	for c in existing:
+		workers_root.remove_child(c)
+		c.queue_free()
+	for i in GameState.workers.size():
 		var w := WorkerScript.new()
 		w.world = self
 		w.index = i

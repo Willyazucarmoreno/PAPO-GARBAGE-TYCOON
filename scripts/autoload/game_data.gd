@@ -100,10 +100,61 @@ var ACHIEVEMENTS: Array = [
 	{"id": "ads_3", "name": "Patrocinado", "desc": "Mira 3 anuncios voluntarios", "stat": "ads", "goal": 3, "reward": 5},
 ]
 
-## Recompensas por anuncio voluntario.
-const AD_COOLDOWN := 45.0
+## Misiones diarias/semanales: %s se sustituye por la meta escalada.
+var DAILY_TEMPLATES: Array = [
+	{"id": "d_rec", "text": "Recoge %s residuos", "stat": "collected", "goal": 60, "reward": 3},
+	{"id": "d_sell", "text": "Haz %s ventas", "stat": "sales", "goal": 6, "reward": 3},
+	{"id": "d_earn", "text": "Gana $%s", "stat": "earned", "goal": 400, "reward": 4},
+	{"id": "d_up", "text": "Compra %s mejoras", "stat": "upgrades_bought", "goal": 3, "reward": 3},
+	{"id": "d_clean", "text": "Limpia %s residuos raros (aluminio o más)", "stat": "rare", "goal": 15, "reward": 4},
+]
+var WEEKLY_TEMPLATES: Array = [
+	{"id": "w_rec", "text": "Recoge %s residuos", "stat": "collected", "goal": 1500, "reward": 15},
+	{"id": "w_sell", "text": "Haz %s ventas", "stat": "sales", "goal": 80, "reward": 12},
+	{"id": "w_earn", "text": "Gana $%s", "stat": "earned", "goal": 20000, "reward": 20},
+	{"id": "w_up", "text": "Compra %s mejoras", "stat": "upgrades_bought", "goal": 25, "reward": 12},
+]
+
+## Recompensa diaria (racha de 7 días).
+var DAILY_REWARDS: Array = [
+	{"eco": 2, "money_secs": 60}, {"eco": 3, "money_secs": 90}, {"eco": 4, "money_secs": 120},
+	{"eco": 5, "money_secs": 150}, {"eco": 6, "money_secs": 180}, {"eco": 8, "money_secs": 240},
+	{"eco": 15, "money_secs": 360},
+]
+
+## Eventos de temporada. bonus = multiplicador de venta.
+var EVENTS: Array = [
+	{"id": "halloween", "name": "Halloween", "from": [10, 20], "to": [11, 2], "bonus": 1.25, "color": Color("ff7f11"), "deco": "pumpkin"},
+	{"id": "navidad", "name": "Navidad", "from": [12, 1], "to": [12, 29], "bonus": 1.25, "color": Color("e63946"), "deco": "xmas"},
+	{"id": "anio_nuevo", "name": "Año Nuevo", "from": [12, 30], "to": [1, 6], "bonus": 1.3, "color": Color("ffd166"), "deco": "fireworks"},
+	{"id": "dia_tierra", "name": "Día de la Tierra", "from": [4, 18], "to": [4, 24], "bonus": 1.5, "color": Color("2a9d8f"), "deco": "earth"},
+]
+
+## Personalización (EcoCoins). slot: shirt | hat | vehicle.
+var COSMETICS: Array = [
+	{"id": "shirt_orange", "slot": "shirt", "name": "Uniforme naranja", "color": Color("ff8c1a"), "cost": 0},
+	{"id": "shirt_blue", "slot": "shirt", "name": "Uniforme azul", "color": Color("2e86de"), "cost": 10},
+	{"id": "shirt_pink", "slot": "shirt", "name": "Uniforme rosa", "color": Color("ff6b9d"), "cost": 10},
+	{"id": "shirt_black", "slot": "shirt", "name": "Uniforme negro", "color": Color("2d3436"), "cost": 20},
+	{"id": "hat_green", "slot": "hat", "name": "Gorra verde", "color": Color("27ae60"), "cost": 0},
+	{"id": "hat_red", "slot": "hat", "name": "Gorra roja", "color": Color("e74c3c"), "cost": 8},
+	{"id": "hat_gold", "slot": "hat", "name": "Gorra dorada", "color": Color("f1c40f"), "cost": 30},
+	{"id": "veh_default", "slot": "vehicle", "name": "Pintura de fábrica", "color": Color(0, 0, 0, 0), "cost": 0},
+	{"id": "veh_purple", "slot": "vehicle", "name": "Pintura morada", "color": Color("8e44ad"), "cost": 15},
+	{"id": "veh_camo", "slot": "vehicle", "name": "Pintura militar", "color": Color("556b2f"), "cost": 15},
+	{"id": "veh_chrome", "slot": "vehicle", "name": "Pintura cromada", "color": Color("dfe6e9"), "cost": 40},
+]
+
+## Recompensas por anuncio voluntario (kind -> texto).
+var AD_REWARDS: Array = [
+	{"kind": "eco", "name": "+5 EcoCoins", "desc": "EcoCoins adicionales."},
+	{"kind": "production", "name": "Producción x2", "desc": "Ingresos pasivos x2 durante 10 minutos."},
+	{"kind": "speed", "name": "Velocidad x2", "desc": "Te mueves al doble durante 5 minutos."},
+	{"kind": "temp_worker", "name": "Trabajador gratis", "desc": "Un recolector temporal durante 10 minutos."},
+	{"kind": "truck", "name": "Camión especial", "desc": "Carga x3 y más velocidad durante 5 minutos."},
+	{"kind": "materials", "name": "Materiales extra", "desc": "Aparecen materiales valiosos a tu alrededor."},
+]
 const AD_ECO_REWARD := 5
-const AD_BOOST_SECONDS := 180.0
 const BOOST_ECO_COST := 15
 const BOOST_ECO_SECONDS := 300.0
 
@@ -128,15 +179,4 @@ func upgrade_def(id: String) -> Dictionary:
 
 
 static func fmt(v: float) -> String:
-	var a := absf(v)
-	if a >= 1e12:
-		return "%.2fT" % (v / 1e12)
-	if a >= 1e9:
-		return "%.2fB" % (v / 1e9)
-	if a >= 1e6:
-		return "%.2fM" % (v / 1e6)
-	if a >= 1e4:
-		return "%.1fK" % (v / 1e3)
-	if a >= 100.0:
-		return "%d" % int(v)
-	return "%.1f" % v if fmod(v, 1.0) != 0.0 else "%d" % int(v)
+	return PapoFormat.num(v)

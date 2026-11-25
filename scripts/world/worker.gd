@@ -80,7 +80,7 @@ func _process(delta: float) -> void:
 	if w.is_empty() or _body == null:
 		return
 	_t += delta
-	_label.text = "%s Nv%d" % [GameData.worker_def(_type)["name"], int(w["level"])]
+	_label.text = "%s Nv%d%s" % [GameData.worker_def(_type)["name"], int(w["level"]), " (temp.)" if w.has("expires") else ""]
 	match _state:
 		State.STATION:
 			_body.rotation.y = sin(_t * 1.5) * 0.6
@@ -117,6 +117,7 @@ func _seek(delta: float, w: Dictionary) -> void:
 		_target.set_meta("claimed", true)
 	if _move_to(_target.position, delta, w):
 		var mat := int(_target.get_meta("mat"))
+		GameState.worker_collected(int(_target.get_meta("zone")))
 		_load += 1
 		_load_value += float(GameData.MATERIALS[mat]["price"])
 		world.take_trash(_target, self)

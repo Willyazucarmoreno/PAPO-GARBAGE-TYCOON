@@ -10,19 +10,9 @@ Android (vertical) y navegador. Godot 4.3 + GDScript. Gratis, sin conexión
 3. Pisa el círculo verde **VENDER** del centro de reciclaje.
 4. Compra mejoras y vehículos, contrata personal y desbloquea territorios.
 
-## Contenido actual (v0.1)
-| Sistema | Estado |
-|---|---|
-| 12 materiales ($1 papel … $100 oro) | Hecho |
-| Dinero + EcoCoins (sin valor real) | Hecho |
-| 14 niveles: bolsa → mochila → carrito → bicicleta → triciclo → moto → camioneta → furgoneta → camión pequeño → camión recolector → centro de reciclaje → planta industrial → empresa nacional → empresa internacional | Hecho |
-| Mejoras: velocidad, capacidad, precio, almacenamiento, producción, automatización | Hecho |
-| 7 trabajadores (recolector, conductor, clasificador, operador, supervisor, gerente, robot) con niveles 1-10 | Hecho |
-| 12 territorios desbloqueables con decoración propia | Hecho |
-| 19 logros/misiones con premio en EcoCoins | Hecho |
-| Anuncios recompensados voluntarios (simulados en web, AdMob en Android) | Interfaz lista, falta plugin AdMob |
-| Guardado automático cada 10 s + ganancias offline (máx. 8 h) | Hecho |
-| Modelos KayKit | Carga automática al copiarlos en `assets/models/` (ver `docs/ASSETS.md`) |
+## Estado
+Ver `PROGRESO.md` (hecho), `PENDIENTES.md` (siguiente), `ERRORES.md` (limitaciones),
+`ARQUITECTURA.md` (estructura) y `LICENCIAS.md` (recursos).
 
 ## Probar
 - **Navegador (tablet):** cada push a `main` publica el juego en GitHub Pages:
@@ -36,7 +26,8 @@ Android (vertical) y navegador. Godot 4.3 + GDScript. Gratis, sin conexión
 ```
 scripts/autoload/game_data.gd   balance: precios, niveles, trabajadores, zonas, logros
 scripts/autoload/game_state.gd  economía, guardado, offline, recompensas
-scripts/autoload/ad_manager.gd  anuncios recompensados (AdMob / simulado)
+addons/papo_engine/             PAPO-GAME-ENGINE (sistemas reutilizables)
+config/game_config.json         límite de anuncios, offline, eventos
 scripts/autoload/asset_lib.gd   carga GLB de KayKit o geometría low poly de reserva
 scripts/world/                  mundo, jugador, trabajadores
 scripts/ui/                     HUD, menús y joystick táctil
@@ -44,4 +35,4 @@ tests/smoke.gd                  prueba automática (se ejecuta en CI)
 ```
 
 ## Licencias
-Código: MIT (ver `LICENSE`). Recursos de terceros: ver `CREDITS.md`.
+Código: MIT (ver `LICENSE`). Recursos de terceros: ver `LICENCIAS.md`.

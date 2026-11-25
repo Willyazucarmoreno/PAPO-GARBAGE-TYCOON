@@ -1,0 +1,13 @@
+{
+  "ads": {
+    "max_daily": 10,
+    "cooldown": 30,
+    "app_id": "ca-app-pub-3940256099942544~3347511713",
+    "rewarded_id": "ca-app-pub-3940256099942544/5224354917",
+    "_nota": "IDs de PRUEBA de Google. Sustituir solo al publicar."
+  },
+  "offline_cap_hours": 8,
+  "offline_factor_without_manager": 0.5,
+  "force_event": "",
+  "autosave_seconds": 10
+}
