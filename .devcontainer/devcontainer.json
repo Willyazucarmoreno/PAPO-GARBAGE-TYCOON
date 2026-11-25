@@ -1,0 +1,7 @@
+{
+  "name": "PAPO Garbage Tycoon (Godot 4.3)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "forwardPorts": [8060],
+  "portsAttributes": { "8060": { "label": "Juego web", "onAutoForward": "openBrowser" } }
+}
